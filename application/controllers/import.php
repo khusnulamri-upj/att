@@ -669,61 +669,197 @@ class Import extends CI_Controller {
         if ($this->session->userdata('username') == '') {
             echo 'LOGIN REQUIRED';
         } else {
-                        
-        //$db_dflt = $this->load->database('default', TRUE);
-        $db_temp = $this->load->database('temporary', TRUE);
+        //cek apa data sudah ada di TBL attendance
+        //dengan mengecek COL user_id, date
+        //1. bandingkan DB temp TAB mdb_checkinout COL user_id dengan DB presensi TAB attendance COL user_id
+        //--->> bila semua user_id sama (tidak terjadi penambahan)
+        //------:: sql dengan filter max_date
+        //--->> bila ada user_id beda (terjadi penambahan)
+        //------:: cari user_id yang beda,, sql untuk semua (tanpa filter max_date) 
         
-        $sql_temp = "SELECT user_id,
+        /*$db_dflt = $this->load->database('default', TRUE);
+        $sql_dflt_user_id = "SELECT user_id FROM attendance
+            GROUP BY user_id";
+        //print($sql_dflt_user_id);
+        $qry_dflt_user_id = $db_dflt->query($sql_dflt_user_id);
+        $arr_dflt_user_id = array();
+        foreach ($qry_dflt_user_id->result() as $row_dflt_user_id) {
+            $arr_dflt_user_id[] = $row_dflt_user_id->user_id;
+        }
+        //print_r($arr_dflt_user_id);
+        $db_dflt->close();*/
+        
+        $db_dflt = $this->load->database('default', TRUE);
+        $sql_dflt_max_date = "SELECT user_id,
+            MAX(date) AS max_date,
+            IF(YEAR(MAX(date)) IS NULL,0,YEAR(MAX(date))) AS year_max_date,
+            IF(DAYOFYEAR(MAX(date)) IS NULL,0,DAYOFYEAR(MAX(date))) AS day_max_date
+            FROM attendance
+            GROUP BY user_id;";
+        //print($sql_dflt_max_date);
+        $qry_dflt_max_date = $db_dflt->query($sql_dflt_max_date);
+        $arr_dflt_user_id = array();
+        $arr_dflt_max_date = array();
+        $index = 0;
+        foreach ($qry_dflt_max_date->result() as $row_dflt_max_date) {
+            $arr_dflt_user_id[] = $row_dflt_max_date->user_id;
+            $arr_dflt_max_date[$index] = new stdClass();
+            $arr_dflt_max_date[$index]->user_id = $row_dflt_max_date->user_id;
+            $arr_dflt_max_date[$index]->year_max_date = $row_dflt_max_date->year_max_date;
+            $arr_dflt_max_date[$index]->day_max_date = $row_dflt_max_date->day_max_date;
+            $index++;
+        }
+        //print_r($arr_dflt_max_date);
+        $db_dflt->close();
+        
+        $db_temp = $this->load->database('temporary', TRUE);
+        $sql_temp_user_id = "SELECT user_id FROM mdb_checkinout
+            GROUP BY user_id";
+        //print($sql_temp_user_id);
+        $qry_temp_user_id = $db_temp->query($sql_temp_user_id);
+        $arr_diff_user_id = array();
+        foreach ($qry_temp_user_id->result() as $row_temp_user_id) {
+            if (!in_array($row_temp_user_id->user_id, $arr_dflt_user_id)) {
+                //$arr_diff_user_id[] = $row_temp_user_id->user_id;
+                $arr_dflt_max_date[$index] = new stdClass();
+                $arr_dflt_max_date[$index]->user_id = $row_temp_user_id->user_id;
+                $arr_dflt_max_date[$index]->year_max_date = '0';
+                $arr_dflt_max_date[$index]->day_max_date = '0';
+                $index++;
+            }
+        }
+        //print_r($arr_diff_user_id);
+        
+        $arr_temp_all_import = array();
+        foreach ($arr_dflt_max_date as $row_max_date) {
+            if (($row_max_date->year_max_date == '0') && ($row_max_date->day_max_date == '0')) {
+                $fltr_max_date = "";
+            } else {
+                $fltr_max_date = " AND DATE(check_time) > MAKEDATE($row_max_date->year_max_date,$row_max_date->day_max_date)";
+            }
+            $sql_temp_import = "SELECT user_id,
+                DATE(check_time) AS date,
+                MAKETIME(HOUR(MIN(check_time)),MINUTE(MIN(check_time)),00) AS min_time,
+                MAKETIME(HOUR(MAX(check_time)),MINUTE(MAX(check_time)),00) AS max_time
+                FROM mdb_checkinout
+                WHERE user_id = $row_max_date->user_id".$fltr_max_date
+                ." GROUP BY user_id, DATE(check_time)
+                ORDER BY user_id, DATE(check_time)";
+            //print($sql_temp_user_id);
+            $qry_temp_import = $db_temp->query($sql_temp_import);
+            //print_r($qry_temp_import);
+            //echo $row_max_date->user_id.' '.$sql_temp_import.' >>> '.$qry_temp_import->num_rows().'<br/>';
+            foreach ($qry_temp_import->result() as $row_temp_import) {
+                $arr_temp_all_import[] = array(
+                    'user_id' => $row_temp_import->user_id,
+                    'date' => $row_temp_import->date,
+                    'min_time' => $row_temp_import->min_time,
+                    'max_time' => $row_temp_import->max_time
+                );
+            }
+        }
+        $db_temp->close();
+        
+        if (sizeof($arr_temp_all_import) > 0) {
+            $db_dflt = $this->load->database('default', TRUE);
+            $db_dflt->insert_batch('attendance', $arr_temp_all_import);
+        }
+        
+        echo sizeof($arr_temp_all_import);
+        }
+        //print_r($arr_temp_all_import);
+        
+        /*$db_dflt = $this->load->database('default', TRUE);
+        foreach ($arr_dflt_user_id as $a_user_id) {
+            $sql_dflt_max_date = "SELECT MAX(date) AS max_date,
+                IF(YEAR(MAX(date)) IS NULL,0,YEAR(MAX(date))) AS year_max_date,
+                IF(DAYOFYEAR(MAX(date)) IS NULL,0,DAYOFYEAR(MAX(date))) AS day_max_date
+                FROM attendance
+                WHERE user_id = $a_user_id";
+            print($sql_dflt_max_date);
+            $qry_dflt_max_date = $db_dflt->query($sql_dflt_max_date);
+            $row_dflt_max_date = $qry_dflt_max_date->row(); 
+            
+            
+            $qry_dflt_user_id = $db_dflt->query($sql_dflt_user_id);
+            $arr_dflt_user_id = array();
+            foreach ($qry_dflt_user_id->result() as $row_dflt_user_id) {
+                $arr_dflt_user_id[] = $row_dflt_user_id->user_id;
+            }
+        }
+        $db_dflt->close();*/
+    }
+    
+    /*public function mdb_process() {
+        if ($this->session->userdata('username') == '') {
+            echo 'LOGIN REQUIRED';
+        } else {
+
+            //$db_dflt = $this->load->database('default', TRUE);
+            $db_temp = $this->load->database('temporary', TRUE);
+
+            $sql_temp = "SELECT user_id,
             DATE(check_time) AS date,
             MAKETIME(HOUR(MIN(check_time)),MINUTE(MIN(check_time)),00) AS min_time,
             MAKETIME(HOUR(MAX(check_time)),MINUTE(MAX(check_time)),00) AS max_time
-            FROM mdb_checkinout
-            GROUP BY user_id, DATE(check_time)
-            ORDER BY user_id, DATE(check_time)";
-        
-        $qry_temp = $db_temp->query($sql_temp);
-        
-        $db_temp->close();
-        
-        echo $sql_temp;
-        
-        $db_dflt = $this->load->database('default', TRUE);
-        
-        //$result = $this->db->query('TRUNCATE attendance');
-        $db_dflt->truncate('attendance');
-        
-        //echo $result;
-        
-        $db_dflt->trans_start();
-        
-        $data_dflt = array();
-        
-        print_r($data_dflt);
-        
-        foreach ($qry_temp->result() as $row_temp) {
-                       
-            $data_dflt = array(
-                'user_id' => $row_temp->user_id,
-                'date' => $row_temp->date,
-                'min_time' => $row_temp->min_time,
-                'max_time' => $row_temp->max_time
-            );
+            FROM mdb_checkinout";
             
-            $db_dflt->insert('attendance', $data_dflt);
-            //$db_mysql->insert('mdb_userinfo', $data_mysql);
             
-            //echo "insert data to mysql finish ".$row_mdb->user_id;
-        }
-        
-        print_r($data_dflt);
-        
-        $db_dflt->trans_complete();
-        
-        //$db_temp->close();
+            
+            //cek apa data sudah ada di TBL attendance
+            //dengan mengecek COL user_id, date
+            //1. bandingkan DB temp COL user_id dengan DB presensi COL user_id
+            //--->> bila jumlah user_id sama (tidak terjadi penambahan)
+            //------:: sql dengan filter max_date
+            //--->> bila jumlah user_id beda (terjadi penambahan)
+            //------:: cari user_id yang beda,, sql untuk semua (tanpa filter max_date) 
+            //2. 
+           
+            
+            $sql_temp = $sql_temp." GROUP BY user_id, DATE(check_time)
+                ORDER BY user_id, DATE(check_time)";
+            
+            $qry_temp = $db_temp->query($sql_temp);
 
-        //$this->load->view('welcome_message');
+            $db_temp->close();
+
+            //echo $sql_temp;
+
+            $db_dflt = $this->load->database('default', TRUE);
+
+            //$result = $this->db->query('TRUNCATE attendance');
+            //$db_dflt->truncate('attendance');
+
+            //echo $result;
+
+            $db_dflt->trans_start();
+
+            $data_dflt = array();
+
+            //print_r($data_dflt);
+
+            foreach ($qry_temp->result() as $row_temp) {
+
+                $data_dflt = array(
+                    'user_id' => $row_temp->user_id,
+                    'date' => $row_temp->date,
+                    'min_time' => $row_temp->min_time,
+                    'max_time' => $row_temp->max_time
+                );
+
+                $db_dflt->insert('attendance', $data_dflt);
+                //$db_mysql->insert('mdb_userinfo', $data_mysql);
+                //echo "insert data to mysql finish ".$row_mdb->user_id;
+            }
+
+            //print_r($data_dflt);
+
+            $db_dflt->trans_complete();
+
+            //$db_temp->close();
+            //$this->load->view('welcome_message');
         
         
         }
-    }
+    }*/
 }

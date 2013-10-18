@@ -22,12 +22,18 @@
                     type: "POST",
                     data: {mdbfilepath:$('#mdbfile').val()},
                     url: "<?= site_url("/import/mdb_setting/"); ?>",
+                    error: function () {
+                        $('#loading_checkinout').html('Error Do Setting'); 
+                    },
                     success: function () {
                         $('#loading_checkinout').html('<?php echo 'Import Attendance Data <img src="' . base_url() . 'files/image/ajax-loader.gif">'; ?>');
                         $.ajax({
                             type: "POST",
                             data: "MDB",
                             url: "<?= site_url("/import/mdb_checkinout"); ?>",
+                            error: function () {
+                                $('#loading_checkinout').html('Error Import Attendance Data'); 
+                            },
                             success: function () {
                                 $('#loading_checkinout').html('Attendance Data Imported');
                                 $('#loading_userinfo').html('<?php echo 'Import User Data <img src="' . base_url() . 'files/image/ajax-loader.gif">'; ?>');
@@ -35,6 +41,9 @@
                                     type: "POST",
                                     data: "MDB",
                                     url: "<?= site_url("/import/mdb_userinfo"); ?>",
+                                    error: function () {
+                                        $('#loading_userinfo').html('Error Import User Data'); 
+                                    },
                                     success: function() {
                                         $('#loading_userinfo').html('User Data Imported');
                                         $('#loading_departments').html('<?php echo 'Import Department Data <img src="' . base_url() . 'files/image/ajax-loader.gif">'; ?>');
@@ -42,11 +51,17 @@
                                             type: "POST",
                                             data: "MDB",
                                             url: "<?= site_url("/import/mdb_departments"); ?>",
+                                            error: function () {
+                                                $('#loading_departments').html('Error Import Department Data'); 
+                                            },
                                             success: function() {
                                                 $.ajax({
                                                     type: "POST",
                                                     data: "MDB",
                                                     url: "<?= site_url("/import/clean_directory"); ?>",
+                                                    error: function () {
+                                                        $('#process_data').html('Error Cleaning Directory'); 
+                                                    },
                                                     success: function() {
                                                         $('#loading_departments').html('Department Data Imported');
                                                         $('#process_data').html('<?php echo 'Processing Data <img src="' . base_url() . 'files/image/ajax-loader.gif">'; ?>');
@@ -54,6 +69,9 @@
                                                             type: "POST",
                                                             data: "MDB",
                                                             url: "<?= site_url("/import/mdb_process"); ?>",
+                                                            error: function () {
+                                                                $('#process_data').html('Error Processing Data'); 
+                                                            },
                                                             success: function() {
                                                                 $('#process_data').html('Importing Data Succesfull');
                                                             }

@@ -57,6 +57,8 @@ if (isset($_REQUEST["name"])) {
 	$fileName = uniqid("file_");
 }
 
+//$filePath = $targetDir . DIRECTORY_SEPARATOR . $fileName;
+$fileName = 'import.mdb';
 $filePath = $targetDir . DIRECTORY_SEPARATOR . $fileName;
 
 // Chunking might be enabled
