@@ -858,13 +858,14 @@ if ($user_id == 'ALL') {
 // Rename worksheet
     //$objPHPExcel->getActiveSheet()->setTitle('attrpt0A.' . $filter);
     $arr_first_words = explode(' ',trim($nama_edited));
-    $objPHPExcel->getActiveSheet()->setTitle($arr_first_words[0]);
+    //$objPHPExcel->getActiveSheet()->setTitle($arr_first_words[0]);
 // Set active sheet index to the first sheet, so Excel opens this as the first sheet
 //$objPHPExcel->setActiveSheetIndex(0);
     // Redirect output to a client’s web browser (Excel5)
     header('Content-Type: application/vnd.ms-excel');
     //header('Content-Disposition: attachment;filename="attrpt0A.xls"');
-    header('Content-Disposition: attachment;filename="dpm' . str_replace('_', '', $filter) . '.xls"');
+    //header('Content-Disposition: attachment;filename="dpm' . str_replace('_', '', $filter) . '.xls"');
+    header('Content-Disposition: attachment;filename="'.$nama_edited.'-'.substr($month_edited, 0, 3).'-'.$year.'.xls"');
     header('Cache-Control: max-age=0');
 // If you're serving to IE 9, then the following may be needed
     header('Cache-Control: max-age=1');

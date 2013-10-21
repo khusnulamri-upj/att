@@ -38,6 +38,8 @@ class Import extends CI_Controller {
         //$this->load->view('imp_act_upload',$data);
         
         //echo $targetDir;
+        $data = array('app_log' => 'NONE');
+        $this->session->set_userdata($data);
         if ($this->session->userdata('username') == '') {
             redirect('login');
         } else {
@@ -48,7 +50,9 @@ class Import extends CI_Controller {
     
     public function clean_directory() {
         if ($this->session->userdata('username') == '') {
-            echo 'LOGIN REQUIRED';
+            //echo 'LOGIN REQUIRED';
+            $data = array('app_log' => 'LOGIN REQUIRED : clean_directory');
+            $this->session->set_userdata($data);
         } else {
           
             $this->load->helper('file');
@@ -140,7 +144,9 @@ class Import extends CI_Controller {
         //$file_path = "D:\UPJ\Attendance\att2000.mdb";
         //$file_path = "D:\UPJ\Attendance\mdb\att2000.mdb";
         if ($this->session->userdata('username') == '') {
-            echo 'LOGIN REQUIRED';
+            //echo 'LOGIN REQUIRED';
+            $data = array('app_log' => 'LOGIN REQUIRED : mdb_setting');
+            $this->session->set_userdata($data);
         } else {
             $file_path = $this->Parameter->get_value('mdb_server_file_path');
         //$file_path = $this->input->post('mdbfilepath');
@@ -166,7 +172,9 @@ class Import extends CI_Controller {
 
     public function mdb_checkinout() {
         if ($this->session->userdata('username') == '') {
-            echo 'LOGIN REQUIRED';
+            $data = array('app_log' => 'LOGIN REQUIRED : mdb_checkinout');
+            $this->session->set_userdata($data);
+            //echo 'LOGIN REQUIRED';
         } else {
             $file_path = $this->Parameter->get_value('mdb_server_file_path');
         //$file_path = $this->session->userdata('import_mdb_file_path');
@@ -239,6 +247,7 @@ class Import extends CI_Controller {
         //$db_mysql->query('TRUNCATE mdb_checkinout');
         $db_mysql->truncate('mdb_checkinout');
         
+        $i = 0;
         
         foreach ($qry_mdb->result() as $row_mdb) {
             $data_mysql = array(
@@ -320,7 +329,10 @@ class Import extends CI_Controller {
             //$db_mysql->insert('mdb_userinfo', $data_mysql);
             
             //echo "insert data to mysql finish ".$row_mdb->user_id;
+            $i++;
         }
+        
+        echo $i;
         
         $db_mysql->trans_complete();
         
@@ -333,7 +345,10 @@ class Import extends CI_Controller {
     
     public function mdb_userinfo() {
         if ($this->session->userdata('username') == '') {
-            echo 'LOGIN REQUIRED';
+            //echo 'LOGIN REQUIRED';
+            $data = array('app_log' => 'LOGIN REQUIRED : mdb_userinfo');
+            $this->session->set_userdata($data);
+            show_404();
         } else {
             $file_path = $this->Parameter->get_value('mdb_server_file_path');
         //$file_path = $this->session->userdata('import_mdb_file_path');
@@ -405,6 +420,8 @@ class Import extends CI_Controller {
         
         //$db_mysql->query('TRUNCATE mdb_userinfo');
         $db_mysql->truncate('mdb_userinfo');
+        
+        $i = 0;
         
         foreach ($qry_mdb->result() as $row_mdb) {
             /*$data_mysql = array(
@@ -486,7 +503,10 @@ class Import extends CI_Controller {
             $db_mysql->insert('mdb_userinfo', $data_mysql);
             
             //echo "insert data to mysql finish ".$row_mdb->user_id;
+            $i++;
         }
+        
+        echo $i;
         
         $db_mysql->trans_complete();
         
@@ -499,7 +519,9 @@ class Import extends CI_Controller {
     
     public function mdb_departments() {
         if ($this->session->userdata('username') == '') {
-            echo 'LOGIN REQUIRED';
+            //echo 'LOGIN REQUIRED';
+            $data = array('app_log' => 'LOGIN REQUIRED : mdb_departments');
+            $this->session->set_userdata($data);
         } else {
             $file_path = $this->Parameter->get_value('mdb_server_file_path');
         //$file_path = $this->session->userdata('import_mdb_file_path');
@@ -508,7 +530,7 @@ class Import extends CI_Controller {
 
         //$file_path = "D:\UPJ\Attendance\att2000.mdb";
         
-        echo $file_path;
+        //echo $file_path;
         
         $config['hostname'] = "Driver={Microsoft Access Driver (*.mdb)}; DBQ=" . $file_path;
         $config['username'] = "";
@@ -573,6 +595,8 @@ class Import extends CI_Controller {
         
         //$db_mysql->query('TRUNCATE mdb_departments');
         $db_mysql->truncate('mdb_departments');
+        
+        $i = 0;
         
         foreach ($qry_mdb->result() as $row_mdb) {
             /*$data_mysql = array(
@@ -654,7 +678,10 @@ class Import extends CI_Controller {
             //$db_mysql->insert('mdb_userinfo', $data_mysql);
             
             //echo "insert data to mysql finish ".$row_mdb->user_id;
+            $i++;
         }
+        
+        echo $i;
         
         $db_mysql->trans_complete();
         
@@ -667,8 +694,11 @@ class Import extends CI_Controller {
     
     public function mdb_process() {
         if ($this->session->userdata('username') == '') {
-            echo 'LOGIN REQUIRED';
+            //echo 'LOGIN REQUIRED'
+            $data = array('app_log' => 'LOGIN REQUIRED : mdb_process');
+            $this->session->set_userdata($data);
         } else {
+            $user_id = $this->session->userdata('credentials');
         //cek apa data sudah ada di TBL attendance
         //dengan mengecek COL user_id, date
         //1. bandingkan DB temp TAB mdb_checkinout COL user_id dengan DB presensi TAB attendance COL user_id
@@ -751,6 +781,7 @@ class Import extends CI_Controller {
             //echo $row_max_date->user_id.' '.$sql_temp_import.' >>> '.$qry_temp_import->num_rows().'<br/>';
             foreach ($qry_temp_import->result() as $row_temp_import) {
                 $arr_temp_all_import[] = array(
+                    'created_by' => $user_id,
                     'user_id' => $row_temp_import->user_id,
                     'date' => $row_temp_import->date,
                     'min_time' => $row_temp_import->min_time,
@@ -763,9 +794,105 @@ class Import extends CI_Controller {
         if (sizeof($arr_temp_all_import) > 0) {
             $db_dflt = $this->load->database('default', TRUE);
             $db_dflt->insert_batch('attendance', $arr_temp_all_import);
+            $db_dflt->close();
         }
         
         echo sizeof($arr_temp_all_import);
+        
+        $db_temp = $this->load->database('temporary', TRUE);
+        
+        $sql_temp_import_dept = "SELECT * FROM mdb_departments";
+            //print($sql_temp_user_id);
+        $qry_temp_import_dept = $db_temp->query($sql_temp_import_dept);
+            //print_r($qry_temp_import);
+            //echo $row_max_date->user_id.' '.$sql_temp_import.' >>> '.$qry_temp_import->num_rows().'<br/>';
+        foreach ($qry_temp_import_dept->result() as $row_temp_import_dept) {
+            $arr_temp_all_import_dept[] = array(
+                'created_by' => $user_id,
+                'dept_id' => $row_temp_import_dept->dept_id,
+                'dept_name' => $row_temp_import_dept->dept_name,
+                'sup_dept_id' => $row_temp_import_dept->sup_dept_id,
+                'inherit_parent_sch' => $row_temp_import_dept->inherit_parent_sch,
+                'inherit_dept_sch' => $row_temp_import_dept->inherit_dept_sch,
+                'inherit_dept_sch_class' => $row_temp_import_dept->inherit_dept_sch_class,
+                'auto_sch_plan' => $row_temp_import_dept->auto_sch_plan,
+                'in_late' => $row_temp_import_dept->in_late,
+                'out_early' => $row_temp_import_dept->out_early,
+                'inherit_dept_rule' => $row_temp_import_dept->inherit_dept_rule,
+                'min_auto_sch_interval' => $row_temp_import_dept->min_auto_sch_interval,
+                'register_ot' => $row_temp_import_dept->register_ot,
+                'default_sch_id' => $row_temp_import_dept->default_sch_id,
+                'att' => $row_temp_import_dept->att,
+                'holiday' => $row_temp_import_dept->holiday,
+                'over_time' => $row_temp_import_dept->over_time
+            );
+        }
+        
+        $sql_temp_import_user = "SELECT * FROM mdb_userinfo";
+            //print($sql_temp_user_id);
+        $qry_temp_import_user = $db_temp->query($sql_temp_import_user);
+            //print_r($qry_temp_import);
+            //echo $row_max_date->user_id.' '.$sql_temp_import.' >>> '.$qry_temp_import->num_rows().'<br/>';
+        foreach ($qry_temp_import_user->result() as $row_temp_import_user) {
+            $arr_temp_all_import_user[] = array(
+                'created_by' => $user_id,
+                'user_id' => $row_temp_import_user->user_id,
+                'badge_number' => $row_temp_import_user->badge_number,
+                'ssn' => $row_temp_import_user->ssn,
+                'name' => $row_temp_import_user->name,
+                'gender' => $row_temp_import_user->gender,
+                'title' => $row_temp_import_user->title,
+                'pager' => $row_temp_import_user->pager,
+                'birth_day' => $row_temp_import_user->birth_day,
+                'hired_day' => $row_temp_import_user->hired_day,
+                'street' => $row_temp_import_user->street,
+                'city' => $row_temp_import_user->city,
+                'state' => $row_temp_import_user->state,
+                'zip' => $row_temp_import_user->zip,
+                'o_phone' => $row_temp_import_user->o_phone,
+                'f_phone' => $row_temp_import_user->f_phone,
+                'verification_method' => $row_temp_import_user->verification_method,
+                'default_dept_id' => $row_temp_import_user->default_dept_id,
+                'security_flags' => $row_temp_import_user->security_flags,
+                'att' => $row_temp_import_user->att,
+                'in_late' => $row_temp_import_user->in_late,
+                'out_early' => $row_temp_import_user->out_early,
+                'overtime' => $row_temp_import_user->overtime,
+                'sep' => $row_temp_import_user->sep,
+                'holiday' => $row_temp_import_user->holiday,
+                'minzu' => $row_temp_import_user->minzu,
+                'password' => $row_temp_import_user->password,
+                'lunch_duration' => $row_temp_import_user->lunch_duration,
+                'm_verify_pass' => $row_temp_import_user->m_verify_pass,
+                'photo' => $row_temp_import_user->photo,
+                'notes' => $row_temp_import_user->notes,
+                'privilege' => $row_temp_import_user->privilege,
+                'inherit_dept_sch' => $row_temp_import_user->inherit_dept_sch,
+                'inherit_dept_sch_class' => $row_temp_import_user->inherit_dept_sch_class,
+                'auto_sch_plan' => $row_temp_import_user->auto_sch_plan,
+                'min_auto_sch_interval' => $row_temp_import_user->min_auto_sch_interval,
+                'register_ot' => $row_temp_import_user->register_ot,
+                'inherit_dept_rule' => $row_temp_import_user->inherit_dept_rule,
+                'emprivilege' => $row_temp_import_user->emprivilege,
+                'card_no' => $row_temp_import_user->card_no,
+                'pin1' => $row_temp_import_user->pin1
+            );
+        }
+        
+        $db_temp->close();
+        
+        if ((sizeof($arr_temp_all_import_dept) > 0) || (sizeof($arr_temp_all_import_user) > 0)) {
+            $db_dflt = $this->load->database('default', TRUE);
+            $db_dflt->truncate('department');
+            $db_dflt->insert_batch('department', $arr_temp_all_import_dept);
+            $db_dflt->truncate('userinfo');
+            $db_dflt->insert_batch('userinfo', $arr_temp_all_import_user);
+            $db_dflt->close();
+        }
+        
+        echo ';'.sizeof($arr_temp_all_import_dept);
+        echo ';'.sizeof($arr_temp_all_import_user);
+        
         }
         //print_r($arr_temp_all_import);
         

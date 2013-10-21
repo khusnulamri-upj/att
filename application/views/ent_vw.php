@@ -165,6 +165,7 @@
                 ?>
                 <p style="font-size: 4px;"><?= $att_kode ?></p>
                 <p><?= form_submit('save', 'Simpan'); ?></p>
+                <p><a href="<?= site_url("report/detail_personal_monthly_xls/$att_filter"); ?>">Eksport ke XLS</a></p>
                 <p><a href="<?= site_url("entry"); ?>">Kembali</a></p>
                 <?= form_close(); ?>
             </div>
